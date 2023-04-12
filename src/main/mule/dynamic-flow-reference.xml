@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="16638ff0-5647-4a82-9540-dde15bb02c9f" >
+		<http:listener-connection host="0.0.0.0" port="8081" />
+	</http:listener-config>
+	<flow name="dynamic-flow-referenceFlow" doc:id="10d7ce14-46ca-47dc-adc4-9208fc12b7fc" >
+		<http:listener doc:name="Listener" doc:id="d8d6e1a3-d6ac-4f53-8651-4d3e33d3feb9" config-ref="HTTP_Listener_config" path="/df"/>
+		<ee:transform doc:name="input" doc:id="940de3dc-c2f1-4ec4-b5b0-00b7c517aab3" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"movieName":"RRR",
+	//"Activity":"check"
+	"Activity":"Book"
+	//"Activity":"Cancel"
+	
+	// activate one after other activity
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<ee:transform doc:name="Transform Message" doc:id="b0d7e225-a0d6-4d81-b74a-b99db0e0e179">
+			<ee:message>
+			</ee:message>
+			<ee:variables >
+				<ee:set-variable variableName="flowName" ><![CDATA[%dw 2.0
+output application/json
+---
+if (payload.Activity == "check") "CheckingAvailability" 
+else if (payload.Activity == "Book") "Booking" 
+else if (payload.Activity == "Cancel") "Canceling"
+else ""]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<flow-ref doc:name="Flow Reference" doc:id="863bed04-c14d-4d99-9645-d049123f640d" name="#[vars.flowName]"/>
+	</flow>
+	<flow name="CheckingAvailability" doc:id="7a6e5300-d6e6-4677-bf11-c3a36ada3928" >
+		<ee:transform doc:name="Transform Message" doc:id="bc3eef8a-9e1e-40fd-aff4-18709abf5bba" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload.movieName ++ "seats are available"
+]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow name="Booking" doc:id="a2853bf4-9c3c-4d83-871c-1a6bd244ebdd" >
+		<ee:transform doc:name="Transform Message" doc:id="ae99687c-315e-4a19-b5a8-74b7310b079e" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload.movieName ++ "your ticket has booked"]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow name="Canceling" doc:id="20f5f4b8-480d-4870-8674-2faf6d29ad08" >
+		<ee:transform doc:name="Transform Message" doc:id="dbd233be-9545-4261-ae3a-a56589a423b8" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload.movieName as String ++ "your ticket has been cancelled succesfully"]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+</mule>
